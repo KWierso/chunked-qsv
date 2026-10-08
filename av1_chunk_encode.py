@@ -238,13 +238,10 @@ def run_qsv(chunk, q, out, lg, sw, vthreads):
     """
     cmd = [A.qsvencc, "--device", "1", "--avhw", "-i", chunk,
            "-c", "av1", "--icq", q, "--gop-len", A.gop, "--quality", "1",
-           "--output-depth", 10,
-           "--colorrange", "auto", "--colormatrix", "auto", "--colorprim", "auto",
-           "--transfer", "auto", "--chromaloc", "auto", "--tune", "perceptual",
-           "--la-depth", "30", "--la-quality", "fast",
-           "--pic-struct",
-           # Era 1 keeps the source timestamps (VFR); the others force CFR.
-           "--avsync", "vfr" if A.era == "1" else "forcecfr"]
+           "--output-depth", 10, "--colorrange", "auto", "--colormatrix",
+           "auto", "--colorprim", "auto", "--transfer", "auto",
+           "--chromaloc", "auto", "--tune", "perceptual", "--pic-struct",
+           "--avsync", "vfr"]
 
     # Per-era cleanup filters.
     if A.era == "1":
@@ -279,7 +276,7 @@ def try_encode(ctx, chunk, q, trydir, idx, vthreads):
     out = trydir / f"chunk_{idx:05d}_q{q}.mkv"
     lg = trydir / f"chunk_{idx:05d}_q{q}.log"
 
-    initial_sw = True if (A.era == "1" or ctx.sw) else False
+    initial_sw = True if ctx.sw else False
 
     for sw in ([True] if initial_sw else [False, True]):
         res = run_qsv(chunk, q, out, lg, sw, vthreads)
@@ -486,7 +483,7 @@ def process(src):
     if A.plan_only:
         return
 
-    ctx = Ctx(sw=(codec in SW_CODECS or A.era == "1"))
+    ctx = Ctx(sw=codec in SW_CODECS)
     if ctx.sw:
         log(f"Enforcing software decode path for stabilization.")
     vthreads = max(1, (os.cpu_count() or 4) // A.workers)  # VMAF threads per worker
